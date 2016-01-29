@@ -9,7 +9,7 @@ package main
 import (
 	"os"
 
-	"github.com/eris-ltd/geth-tmsp/app"
+	gethapp "github.com/eris-ltd/geth-tmsp/app"
 	"github.com/ethereum/go-ethereum/cmd/utils"
 	. "github.com/tendermint/go-common"
 	"github.com/tendermint/tmsp/server"
@@ -23,6 +23,8 @@ func main() {
 	app := utils.NewApp(Version, "the geth-tmsp command line interface")
 	app.Action = run
 	app.Flags = []cli.Flag{
+		gethapp.TendermintCoreHostFlag,
+
 		utils.IdentityFlag,
 		utils.UnlockedAccountFlag,
 		utils.PasswordFileFlag,
@@ -97,7 +99,7 @@ func main() {
 func run(ctx *cli.Context) {
 	// Start the tmsp listener
 	// all flags are passed through to the app
-	_, err := server.StartListener("tcp://0.0.0.0:46658", app.NewEthereumApplication(ctx))
+	_, err := server.StartListener("tcp://0.0.0.0:46658", gethapp.NewEthereumApplication(ctx))
 	if err != nil {
 		Exit(err.Error())
 	}
