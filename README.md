@@ -1,5 +1,5 @@
 # geth-tmsp
-Ethereum's geth over the TenderMint Socket Protocol
+Ethereum's geth over the [Tendermint Socket Protocol](http://tendermint.com/tutorials/run-your-first-tmsp-application/)
 
 Geth rpc/ipc interfaces are provided as normal, and whatever flags can be supported are.
 Some backend functions are torn out to talk to tendermint core.
@@ -8,27 +8,26 @@ Currently most of the chain related txs will just work with the genesis block, u
 
 Working with the current state is supported.
 
+A [fork of go-ethereum](https://github.com/eris-ltd/go-ethereum/tree/tmsp) is used with changes only to the `xeth` package to support calling the tendermint daemon for broadcasting transactions (and eventually getting block info). This code is vendored under ethereum/go-ethereum because golang has tyranical import rules.
+
 # Install
-
-We need a slightly modified version of go-ethereum, and something is up with godeps (as usual):
-
-```
-go get github.com/ethereum/go-ethereum
-cd $GOPATH/src/github.com/ethereum/go-ethereum
-git remote add eris https://github.com/eris-ltd/go-ethereum
-git fetch -a eris
-git checkout eris/tmsp
-make geth
-```
-
-Now we can install the `geth-tmsp` app:
 
 ```
 go get github.com/eris-ltd/geth-tmsp
 ```
 
-Run the test (`test/test.sh`) for an example. It requires tendermint be installed as well
+Normal `geth` can be used to `attach` to a running `geth-tmsp` to interact with the chain.
 
-TODO: dockerize the test, test contracts
-TODO: mempool state, wiring up blocks, etc.
+See the test in test/test.sh for more details. 
+
+Run the test in a docker container with:
+
+```
+docker build -t eris/geth-tmsp/test -f test/Dockerfile .
+docker run --rm -t eris/geth-tmsp-test
+```
+
+# TODO
+
+- test contracts, mempool state, wiring up blocks, etc.
 

@@ -3,11 +3,14 @@
 # TODO: geth path needs fixing!
 
 
-DATADIR=~/geth-tmsp-test
-TMROOT=~/geth-tmsp-tendermint
+export DATADIR=~/geth-tmsp-test
+export TMROOT=~/geth-tmsp-tendermint
+
+mkdir -p $DATADIR
+mkdir -p $TMROOT
 
 geth() {
-	geth --datadir $DATADIR "$@"
+	$GOPATH/src/github.com/ethereum/go-ethereum/build/bin/geth --datadir $DATADIR "$@"
 }
 export -f geth
 
@@ -53,7 +56,11 @@ sleep 5
 geth --exec 'loadScript("test/script1.js")' attach
 
 
-sleep 2 # commit blocks
+sleep 2 # commit blocks TODO: sleep in script
 
-geth --exec 'loadScript("test/script2.js")' attach
+RESULT=`geth --exec 'loadScript("test/script2.js")' attach`
+echo $RESULT
 
+if [[ "$RESULT" != "1" ]]; then
+	exit 1
+fi
