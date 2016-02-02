@@ -23,7 +23,7 @@ See the test in test/test.sh for more details.
 Run the test in a docker container with:
 
 ```
-docker build -t eris/geth-tmsp/test -f test/Dockerfile .
+docker build -t eris/geth-tmsp-test -f test/Dockerfile .
 docker run --rm -t eris/geth-tmsp-test
 ```
 
