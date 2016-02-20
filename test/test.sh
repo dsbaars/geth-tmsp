@@ -1,23 +1,9 @@
 #! /bin/bash
 
-export DATADIR=~/geth-tmsp-test
-export TMROOT=~/geth-tmsp-tendermint
+source test/util.sh
 
 mkdir -p $DATADIR
 mkdir -p $TMROOT
-
-# geth prefix
-geth() {
-	$GOPATH/src/github.com/ethereum/go-ethereum/build/bin/geth --datadir $DATADIR "$@"
-}
-export -f geth
-
-removeQuotes() {
-	a=$1
-	a="${a%\"}" 
-	a="${a#\"}"
-	echo $a
-}
 
 # create a new key 
 KEYSTRING=`geth --password ./test/passwd account new` 
@@ -52,14 +38,12 @@ tendermint node --log_level=debug --fast_sync=false --skip_upnp > tendermint.log
 sleep 3
 
 # run the eth test script
-geth --exec 'loadScript("test/script1.js")' attach
-
-
-sleep 2 # commit blocks TODO: sleep in script
-
-RESULT=`geth --exec 'loadScript("test/script2.js")' attach`
-echo $RESULT
+RESULT=`geth --exec 'loadScript("test/script.js")' attach`
+RESULT=`echo $RESULT | awk '{print $1}'` # for some reason geth --exec always outputs true when it finishes
 
 if [[ "$RESULT" != "1" ]]; then
+	echo "Failed"
 	exit 1
 fi
+
+echo "Passed"

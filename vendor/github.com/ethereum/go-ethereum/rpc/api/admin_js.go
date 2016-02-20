@@ -40,6 +40,12 @@ web3._extend({
 			inputFormatter: [null]
 		}),
 		new web3._extend.Method({
+			name: 'sleep',
+			call: 'admin_sleep',
+			params: 1,
+			inputFormatter: [null]
+		}),
+		new web3._extend.Method({
 			name: 'sleepBlocks',
 			call: 'admin_sleepBlocks',
 			params: 2,

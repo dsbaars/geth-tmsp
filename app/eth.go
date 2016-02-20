@@ -105,7 +105,8 @@ func (app *EthereumApplication) StartRPC(ctx *cli.Context) error {
 	ethApi := api.NewEthApi(xeth, eth, codec)
 	personalApi := api.NewPersonalApi(xeth, eth, codec)
 	web3Api := api.NewWeb3Api(xeth, codec)
-	return comms.StartHttp(config, codec, api.Merge(ethApi, personalApi, web3Api))
+	adminApi := api.NewAdminApi(xeth, eth, codec)
+	return comms.StartHttp(config, codec, api.Merge(ethApi, personalApi, web3Api, adminApi))
 }
 
 func (app *EthereumApplication) StartIPC(ctx *cli.Context) error {
@@ -119,8 +120,9 @@ func (app *EthereumApplication) StartIPC(ctx *cli.Context) error {
 		xeth := xeth.NewFromApp(app, fe)
 		ethApi := api.NewEthApi(xeth, eth, codec.JSON)
 		personalApi := api.NewPersonalApi(xeth, eth, codec.JSON)
+		adminApi := api.NewAdminApi(xeth, eth, codec.JSON)
 		web3Api := api.NewWeb3Api(xeth, codec.JSON)
-		return xeth, api.Merge(ethApi, personalApi, web3Api), nil
+		return xeth, api.Merge(ethApi, personalApi, web3Api, adminApi), nil
 	}
 
 	return comms.StartIpc(config, codec.JSON, initializer)
