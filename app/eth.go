@@ -150,7 +150,7 @@ func (app *EthereumApplication) BroadcastTx(tx *ethtypes.Transaction) error {
 	params := map[string]interface{}{
 		"tx": hex.EncodeToString(buf.Bytes()),
 	}
-	_, err := app.client.Call("broadcast_tx", params, &result)
+	_, err := app.client.Call("broadcast_tx_sync", params, &result)
 	return err
 }
 
@@ -172,8 +172,8 @@ func (app *EthereumApplication) Info() string {
 	return ""
 }
 
-func (app *EthereumApplication) Query(query []byte) (result []byte, log string) {
-	return nil, ""
+func (app *EthereumApplication) Query(query []byte) (retCode types.CodeType, result []byte, log string) {
+	return
 }
 
 func (app *EthereumApplication) SetOption(key string, value string) string {
@@ -181,12 +181,12 @@ func (app *EthereumApplication) SetOption(key string, value string) string {
 	return ""
 }
 
-func (app *EthereumApplication) AppendTx(txBytes []byte) (retCode types.RetCode, result []byte, log string) {
+func (app *EthereumApplication) AppendTx(txBytes []byte) (retCode types.CodeType, result []byte, log string) {
 	// decode and run tx
 	tx := new(ethtypes.Transaction)
 	rlpStream := rlp.NewStream(bytes.NewBuffer(txBytes), 0)
 	if err := tx.DecodeRLP(rlpStream); err != nil {
-		return types.RetCodeEncodingError, result, log
+		return types.CodeType_EncodingError, result, log
 	}
 
 	gpi := big.NewInt(1000000000) // a billion ... TODO: configurable
@@ -194,26 +194,26 @@ func (app *EthereumApplication) AppendTx(txBytes []byte) (retCode types.RetCode,
 	ret, gas, err := core.ApplyMessage(NewEnv(app.stateDB, tx), tx, &gp)
 	if err != nil {
 		if err == ethtypes.ErrInvalidSig || err == ethtypes.ErrInvalidPubKey {
-			return types.RetCodeUnauthorized, result, err.Error()
+			return types.CodeType_Unauthorized, result, err.Error()
 		} else if core.IsNonceErr(err) {
-			return types.RetCodeBadNonce, result, err.Error()
+			return types.CodeType_BadNonce, result, err.Error()
 		} else if core.IsInvalidTxErr(err) {
-			return types.RetCodeInsufficientFees, result, err.Error() // bad gas or value transfer
+			return types.CodeType_InsufficientFees, result, err.Error() // bad gas or value transfer
 		} else {
-			return types.RetCodeUnauthorized, result, err.Error() // bad pubkey recovery
+			return types.CodeType_Unauthorized, result, err.Error() // bad pubkey recovery
 		}
 	}
 	_, _ = ret, gas
-	return types.RetCodeOK, result, log
+	return types.CodeType_OK, result, log
 }
 
-func (app *EthereumApplication) CheckTx(tx []byte) (retCode types.RetCode, result []byte, log string) {
+func (app *EthereumApplication) CheckTx(tx []byte) (retCode types.CodeType, result []byte, log string) {
 	// TODO: check nonce, balance, etc
 	return retCode, result, log
 }
 
 // Commit
-func (app *EthereumApplication) GetHash() (hashBytes []byte, log string) {
+func (app *EthereumApplication) Commit() (hashBytes []byte, log string) {
 	hash, err := app.stateDB.Commit()
 	if err != nil {
 		return nil, err.Error()

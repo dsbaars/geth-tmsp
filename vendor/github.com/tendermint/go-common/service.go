@@ -84,14 +84,14 @@ func (bs *BaseService) Start() (bool, error) {
 			return false, nil
 		} else {
 			if bs.log != nil {
-				bs.log.Notice(Fmt("Starting %v", bs.name), "impl", bs.impl)
+				bs.log.Info(Fmt("Starting %v", bs.name), "impl", bs.impl)
 			}
 		}
 		err := bs.impl.OnStart()
 		return true, err
 	} else {
 		if bs.log != nil {
-			bs.log.Info(Fmt("Not starting %v -- already started", bs.name), "impl", bs.impl)
+			bs.log.Debug(Fmt("Not starting %v -- already started", bs.name), "impl", bs.impl)
 		}
 		return false, nil
 	}
@@ -104,13 +104,13 @@ func (bs *BaseService) OnStart() error { return nil }
 func (bs *BaseService) Stop() bool {
 	if atomic.CompareAndSwapUint32(&bs.stopped, 0, 1) {
 		if bs.log != nil {
-			bs.log.Notice(Fmt("Stopping %v", bs.name), "impl", bs.impl)
+			bs.log.Info(Fmt("Stopping %v", bs.name), "impl", bs.impl)
 		}
 		bs.impl.OnStop()
 		return true
 	} else {
 		if bs.log != nil {
-			bs.log.Notice(Fmt("Stopping %v (ignoring: already stopped)", bs.name), "impl", bs.impl)
+			bs.log.Debug(Fmt("Stopping %v (ignoring: already stopped)", bs.name), "impl", bs.impl)
 		}
 		return false
 	}

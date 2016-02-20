@@ -37,6 +37,10 @@ func NewWSClient(addr string) *WSClient {
 	return wsClient
 }
 
+func (wsc *WSClient) String() string {
+	return wsc.Address
+}
+
 func (wsc *WSClient) OnStart() error {
 	wsc.QuitService.OnStart()
 	err := wsc.dial()
@@ -90,7 +94,7 @@ func (wsc *WSClient) receiveEventsRoutine() {
 				continue
 			}
 			if response.Error != "" {
-				wsc.ErrorsCh <- fmt.Errorf(err.Error())
+				wsc.ErrorsCh <- fmt.Errorf(response.Error)
 				continue
 			}
 			wsc.ResultsCh <- *response.Result

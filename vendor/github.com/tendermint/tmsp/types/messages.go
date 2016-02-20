@@ -1,155 +1,158 @@
 package types
 
-import "github.com/tendermint/go-wire"
+import (
+	"io"
 
-const (
-	RequestTypeEcho      = byte(0x01)
-	RequestTypeFlush     = byte(0x02)
-	RequestTypeInfo      = byte(0x03)
-	RequestTypeSetOption = byte(0x04)
-	// reserved for GetOption = byte(0x05)
-
-	ResponseTypeException = byte(0x10)
-	ResponseTypeEcho      = byte(0x11)
-	ResponseTypeFlush     = byte(0x12)
-	ResponseTypeInfo      = byte(0x13)
-	ResponseTypeSetOption = byte(0x14)
-	// reserved for GetOption = byte(0x15)
-
-	RequestTypeAppendTx = byte(0x21)
-	RequestTypeCheckTx  = byte(0x22)
-	RequestTypeGetHash  = byte(0x23)
-	RequestTypeQuery    = byte(0x24)
-
-	ResponseTypeAppendTx = byte(0x31)
-	ResponseTypeCheckTx  = byte(0x32)
-	ResponseTypeGetHash  = byte(0x33)
-	ResponseTypeQuery    = byte(0x34)
+	"github.com/golang/protobuf/proto"
+	"github.com/tendermint/go-wire"
 )
+
+func RequestEcho(message string) *Request {
+	return &Request{
+		Type: MessageType_Echo,
+		Data: []byte(message),
+	}
+}
+
+func RequestFlush() *Request {
+	return &Request{
+		Type: MessageType_Flush,
+	}
+}
+
+func RequestInfo() *Request {
+	return &Request{
+		Type: MessageType_Info,
+	}
+}
+
+func RequestSetOption(key string, value string) *Request {
+	return &Request{
+		Type:  MessageType_SetOption,
+		Key:   key,
+		Value: value,
+	}
+}
+
+func RequestAppendTx(txBytes []byte) *Request {
+	return &Request{
+		Type: MessageType_AppendTx,
+		Data: txBytes,
+	}
+}
+
+func RequestCheckTx(txBytes []byte) *Request {
+	return &Request{
+		Type: MessageType_CheckTx,
+		Data: txBytes,
+	}
+}
+
+func RequestCommit() *Request {
+	return &Request{
+		Type: MessageType_Commit,
+	}
+}
+
+func RequestQuery(queryBytes []byte) *Request {
+	return &Request{
+		Type: MessageType_Query,
+		Data: queryBytes,
+	}
+}
 
 //----------------------------------------
 
-type RequestEcho struct {
-	Message string
+func ResponseException(errStr string) *Response {
+	return &Response{
+		Type:  MessageType_Exception,
+		Error: errStr,
+	}
 }
 
-type RequestFlush struct {
+func ResponseEcho(message string) *Response {
+	return &Response{
+		Type: MessageType_Echo,
+		Data: []byte(message),
+	}
 }
 
-type RequestInfo struct {
+func ResponseFlush() *Response {
+	return &Response{
+		Type: MessageType_Flush,
+	}
 }
 
-type RequestSetOption struct {
-	Key   string
-	Value string
+func ResponseInfo(info string) *Response {
+	return &Response{
+		Type: MessageType_Info,
+		Data: []byte(info),
+	}
 }
 
-type RequestAppendTx struct {
-	TxBytes []byte
+func ResponseSetOption(log string) *Response {
+	return &Response{
+		Type: MessageType_SetOption,
+		Log:  log,
+	}
 }
 
-type RequestCheckTx struct {
-	TxBytes []byte
+func ResponseAppendTx(code CodeType, result []byte, log string) *Response {
+	return &Response{
+		Type: MessageType_AppendTx,
+		Code: code,
+		Data: result,
+		Log:  log,
+	}
 }
 
-type RequestGetHash struct {
+func ResponseCheckTx(code CodeType, result []byte, log string) *Response {
+	return &Response{
+		Type: MessageType_CheckTx,
+		Code: code,
+		Data: result,
+		Log:  log,
+	}
 }
 
-type RequestQuery struct {
-	QueryBytes []byte
+func ResponseCommit(hash []byte, log string) *Response {
+	return &Response{
+		Type: MessageType_Commit,
+		Data: hash,
+		Log:  log,
+	}
 }
 
-type Request interface {
-	AssertRequestType()
+func ResponseQuery(code CodeType, result []byte, log string) *Response {
+	return &Response{
+		Type: MessageType_Query,
+		Code: code,
+		Data: result,
+		Log:  log,
+	}
 }
-
-func (_ RequestEcho) AssertRequestType()      {}
-func (_ RequestFlush) AssertRequestType()     {}
-func (_ RequestInfo) AssertRequestType()      {}
-func (_ RequestSetOption) AssertRequestType() {}
-func (_ RequestAppendTx) AssertRequestType()  {}
-func (_ RequestCheckTx) AssertRequestType()   {}
-func (_ RequestGetHash) AssertRequestType()   {}
-func (_ RequestQuery) AssertRequestType()     {}
-
-var _ = wire.RegisterInterface(
-	struct{ Request }{},
-	wire.ConcreteType{RequestEcho{}, RequestTypeEcho},
-	wire.ConcreteType{RequestFlush{}, RequestTypeFlush},
-	wire.ConcreteType{RequestInfo{}, RequestTypeInfo},
-	wire.ConcreteType{RequestSetOption{}, RequestTypeSetOption},
-	wire.ConcreteType{RequestAppendTx{}, RequestTypeAppendTx},
-	wire.ConcreteType{RequestCheckTx{}, RequestTypeCheckTx},
-	wire.ConcreteType{RequestGetHash{}, RequestTypeGetHash},
-	wire.ConcreteType{RequestQuery{}, RequestTypeQuery},
-)
 
 //----------------------------------------
 
-type ResponseException struct {
-	Error string
+// Write proto message, length delimited
+func WriteMessage(msg proto.Message, w io.Writer) error {
+	bz, err := proto.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	var n int
+	wire.WriteByteSlice(bz, w, &n, &err)
+	return err
 }
 
-type ResponseEcho struct {
-	Message string
+// Read proto message, length delimited
+func ReadMessage(r io.Reader, msg proto.Message) error {
+	var n int
+	var err error
+	bz := wire.ReadByteSlice(r, 0, &n, &err)
+	if err != nil {
+		return err
+	}
+	err = proto.Unmarshal(bz, msg)
+	return err
 }
-
-type ResponseFlush struct {
-}
-
-type ResponseInfo struct {
-	Info string
-}
-
-type ResponseSetOption struct {
-	Log string
-}
-
-type ResponseAppendTx struct {
-	Code   RetCode
-	Result []byte
-	Log    string
-}
-
-type ResponseCheckTx struct {
-	Code   RetCode
-	Result []byte
-	Log    string
-}
-
-type ResponseGetHash struct {
-	Hash []byte
-	Log  string
-}
-
-type ResponseQuery struct {
-	Result []byte
-	Log    string
-}
-
-type Response interface {
-	AssertResponseType()
-}
-
-func (_ ResponseEcho) AssertResponseType()      {}
-func (_ ResponseFlush) AssertResponseType()     {}
-func (_ ResponseInfo) AssertResponseType()      {}
-func (_ ResponseSetOption) AssertResponseType() {}
-func (_ ResponseAppendTx) AssertResponseType()  {}
-func (_ ResponseCheckTx) AssertResponseType()   {}
-func (_ ResponseGetHash) AssertResponseType()   {}
-func (_ ResponseException) AssertResponseType() {}
-func (_ ResponseQuery) AssertResponseType()     {}
-
-var _ = wire.RegisterInterface(
-	struct{ Response }{},
-	wire.ConcreteType{ResponseEcho{}, ResponseTypeEcho},
-	wire.ConcreteType{ResponseFlush{}, ResponseTypeFlush},
-	wire.ConcreteType{ResponseInfo{}, ResponseTypeInfo},
-	wire.ConcreteType{ResponseSetOption{}, ResponseTypeSetOption},
-	wire.ConcreteType{ResponseAppendTx{}, ResponseTypeAppendTx},
-	wire.ConcreteType{ResponseCheckTx{}, ResponseTypeCheckTx},
-	wire.ConcreteType{ResponseGetHash{}, ResponseTypeGetHash},
-	wire.ConcreteType{ResponseException{}, ResponseTypeException},
-	wire.ConcreteType{ResponseQuery{}, ResponseTypeQuery},
-)
